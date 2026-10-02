@@ -5,7 +5,7 @@ import { Quote, quoteTotal } from "./doc";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const toBooking = (r: any): Booking => { const tasks = [...(r.production_tasks ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((t: any) => ({ id: t.id, ord: t.ord, label: t.label, done: t.done, doneOn: t.done_on ?? undefined }));
   return {
-  id: r.id, ref: String(r.ref), couple: r.couple, phone: r.phone ?? "", status: r.status, total: Number(r.total), cancelled: r.status === "Cancelled", refund: Number(r.refund_amount ?? 0), cancelReason: r.cancel_reason ?? "",
+  id: r.id, ref: String(r.ref), couple: r.couple, phone: r.phone ?? "", status: r.status, total: Number(r.total), cancelled: r.status === "Cancelled", cancelledAt: String(r.cancelled_at ?? "").slice(0, 10), refund: Number(r.refund_amount ?? 0), cancelReason: r.cancel_reason ?? "",
   tasks, phase: tasks.length ? stageOf(tasks) : r.phase,
   events: (r.booking_events ?? []).map((e: any) => ({ id: e.id, name: e.name, date: e.event_date ?? "", venue: e.venue ?? "", outdoor: !!e.outdoor })).sort((a: any, b: any) => a.date.localeCompare(b.date)),
   slots: [...(r.booking_slots ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((s: any) => ({ id: s.id, event: s.event_name, role: s.role, status: s.status, person: s.person ?? undefined, agency: s.agency ?? undefined })),
@@ -35,4 +35,18 @@ export async function getQuote(no: number) {
   return { no: Number(data.number), status: data.status as string, revision: data.current_revision as number, quote, form: rev.data.form,
     revisions: [...data.quotation_revisions].sort((a: any, b: any) => b.revision - a.revision).map((r: any) => ({ revision: r.revision as number, total: Number(r.total), date: String(r.created_at).slice(0, 10) })),
     bookingId: (bk?.id ?? null) as string | null, total: quoteTotal(quote) };
+}
+
+export type Expense = { id: string; date: string; amount: number; category: string; note: string; bookingId: string | null };
+export async function getExpenses(): Promise<Expense[]> {
+  const sb = await createClient();
+  const { data, error } = await sb.from("expenses").select("*").order("spent_on", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((e: any) => ({ id: e.id, date: e.spent_on, amount: Number(e.amount), category: e.category, note: e.note ?? "", bookingId: e.booking_id }));
+}
+export async function getClients() {
+  const sb = await createClient();
+  const { data, error } = await sb.from("clients").select("id,name,phone,email,quotations(number)").order("name");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((c: any) => ({ id: c.id as string, name: c.name as string, phone: (c.phone ?? "") as string, email: (c.email ?? "") as string, quotes: (c.quotations ?? []).length as number }));
 }

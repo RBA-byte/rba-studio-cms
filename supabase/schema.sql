@@ -21,12 +21,13 @@ create table booking_slots (
   id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade, ord int not null default 0,
   event_name text not null, role text not null, status text not null default 'pending' check (status in ('assigned','pending','agency')), person text, agency text);
 create table production_tasks (id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade, ord int not null, label text not null, done boolean not null default false, done_on date, unique (booking_id, ord));
+create table expenses (id uuid primary key default gen_random_uuid(), booking_id uuid references bookings on delete set null, spent_on date not null default current_date, amount numeric not null check (amount > 0), category text not null, note text, created_at timestamptz default now());
 create table payments (
   id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade,
   seq bigint generated always as identity unique, amount numeric not null check (amount > 0), paid_on date not null default current_date, created_at timestamptz default now());
 
 do $$ declare t text; begin
- foreach t in array array['clients','quotations','quotation_revisions','bookings','booking_events','booking_slots','payments','production_tasks'] loop
+ foreach t in array array['clients','quotations','quotation_revisions','bookings','booking_events','booking_slots','payments','production_tasks','expenses'] loop
   execute format('alter table %I enable row level security', t);
   execute format('create policy owner_only on %I for all to authenticated using (is_owner()) with check (is_owner())', t);
  end loop; end $$;

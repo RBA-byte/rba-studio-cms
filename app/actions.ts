@@ -79,9 +79,10 @@ export async function updateEvent(fd: FormData) {
 }
 export async function cancelBooking(fd: FormData) {
   const sb = await createClient(), id = String(fd.get("booking")), mode = String(fd.get("refund"));
-  const { data: bk, error } = await sb.from("bookings").select("total,payments(amount)").eq("id", id).single(); fail(error);
-  const paid = (bk!.payments as any[]).reduce((s, p) => s + Number(p.amount), 0);
-  const refund = mode === "policy" ? Math.round(Number(bk!.total) * .25) : mode === "custom" ? Math.max(0, Number(fd.get("custom")) || 0) : 0;
+  const { data: bk, error } = await sb.from("bookings").select("payments(amount,seq)").eq("id", id).single(); fail(error);
+  const pays = [...(bk!.payments as any[])].sort((x, y) => x.seq - y.seq), paid = pays.reduce((s, p) => s + Number(p.amount), 0), adv = Number(pays[0]?.amount ?? 0);
+  // Refund is based on the advance (first payment): 25%, 100%, none, or a custom amount.
+  const refund = mode === "policy" ? Math.round(adv * .25) : mode === "full" ? adv : mode === "custom" ? Math.max(0, Number(fd.get("custom")) || 0) : 0;
   fail((await sb.from("bookings").update({ status: "Cancelled", cancelled_at: new Date().toISOString(), cancel_reason: String(fd.get("reason") ?? "") || null, refund_amount: Math.min(refund, paid) }).eq("id", id)).error);
   refresh(); redirect(`/bookings/${id}`);
 }
@@ -98,5 +99,17 @@ export async function toggleTask(fd: FormData) {
 export async function createTasks(fd: FormData) {
   const sb = await createClient();
   fail((await sb.from("production_tasks").insert(taskRows(String(fd.get("booking")), fd.get("albums") === "on"))).error);
+  refresh();
+}
+export async function addExpense(fd: FormData) {
+  const sb = await createClient(), amount = Number(fd.get("amount"));
+  if (!(amount > 0)) throw new Error("Enter an amount.");
+  fail((await sb.from("expenses").insert({ amount, category: String(fd.get("category")), note: String(fd.get("note") ?? "") || null,
+    spent_on: String(fd.get("date")) || undefined, booking_id: String(fd.get("booking") ?? "") || null })).error);
+  refresh();
+}
+export async function deleteExpense(fd: FormData) {
+  const sb = await createClient();
+  fail((await sb.from("expenses").delete().eq("id", String(fd.get("id")))).error);
   refresh();
 }

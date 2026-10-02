@@ -25,5 +25,6 @@ export default async function Dashboard() {
       <div className="row" style={{ border: 0, paddingTop: 0 }}><h2 style={{ margin: 0 }}>Recent bookings</h2><Link className="btn ghost" href="/bookings">View all</Link></div>
       {bookings.slice(0, 5).map(b => <Link className="row" key={b.id} href={`/bookings/${b.id}`}><div><b>{b.couple}</b><div className="mute">{b.events[0]?.name} · {b.events[0]?.date || "Date TBC"}</div></div><span className="pill">{b.status}</span></Link>)}
     </div>
+  <div className="ql"><Link className="btn ghost" href="/finance">Finance</Link><Link className="btn ghost" href="/clients">Clients</Link></div>
   <form action={logout} style={{ marginTop: 24 }}><button className="btn ghost">Sign out</button></form></>;
 }

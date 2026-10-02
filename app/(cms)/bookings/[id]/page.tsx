@@ -13,7 +13,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const { id } = await params, all = await getBookings();
   const b = all.find(x => x.id === id); if (!b) notFound();
   const ok = isConfirmed(b), c = crewProgress(b), clash = b.cancelled ? [] : conflicts(b, all.filter(x => !x.cancelled)), paid = paidOf(b), left = b.total - paid;
-  const rows = schedule(b), next = rows.find(r => r.state !== "paid"), pr = progressOf(b.tasks);
+  const adv = b.payments[0]?.amount ?? 0, rows = schedule(b), next = rows.find(r => r.state !== "paid"), pr = progressOf(b.tasks);
   const suggest = next ? Math.min(left, next.state === "part" ? left : next.amount) : "";
   return <>
     <Link href="/bookings" className="mute">← All bookings</Link>
@@ -55,7 +55,8 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
           <label style={{display:"flex",gap:8,alignItems:"center",margin:0,color:"var(--ink)"}}><input type="checkbox" name="albums" style={{width:18,height:18}} /> Albums included</label><button className="btn">Start production checklist</button></form>}</div>}
     {!b.cancelled && <details className="card reveal" style={{...R(6),marginTop:16}}><summary style={{cursor:"pointer"}}>Cancel this booking</summary>
       <form action={cancelBooking} style={{display:"grid",gap:10,marginTop:14}}><input type="hidden" name="booking" value={b.id} />
-        <label className="opt"><input type="radio" name="refund" value="policy" defaultChecked /> Refund 25% of total ({pkr(Math.min(Math.round(b.total * .25), paid))}, per policy)</label>
+        <label className="opt"><input type="radio" name="refund" value="policy" defaultChecked /> Refund 25% of the advance ({pkr(Math.round(adv * .25))})</label>
+        <label className="opt"><input type="radio" name="refund" value="full" /> Refund 100% of the advance ({pkr(adv)})</label>
         <label className="opt"><input type="radio" name="refund" value="none" /> No refund</label>
         <label className="opt"><input type="radio" name="refund" value="custom" /> Custom refund (PKR)</label>
         <input name="custom" type="number" min={0} max={paid} placeholder="Custom amount" /><input name="reason" placeholder="Reason (optional)" />

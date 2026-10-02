@@ -90,3 +90,6 @@ select{font:inherit;padding:12px 10px}
 .opt{display:flex;gap:10px;align-items:center;margin:0;color:var(--ink);font-size:14px}.opt input{width:auto}
 details>summary{list-style:none}details[open]>summary{color:var(--gold)}
 @media(max-width:900px){.evform{grid-template-columns:1fr 1fr}}
+.bar2{height:5px;background:var(--line);margin-top:6px}.bar2 i{display:block;height:100%;background:var(--gold)}.bar2.out i{background:#7a7f86}
+.btn.sel{border-color:var(--gold);color:var(--gold)}
+.ql{display:none;gap:8px;margin-top:20px}@media(max-width:900px){.ql{display:flex}}
