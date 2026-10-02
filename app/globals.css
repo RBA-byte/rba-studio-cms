@@ -56,25 +56,7 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px}td,th
  .tabs a{flex:1;text-align:center;padding:11px 0;border-radius:16px;font-size:12px;color:var(--mute)}.tabs a.on{background:rgba(201,169,106,.14);color:var(--gold)}
 }
 @media(prefers-reduced-motion:reduce){.reveal,.grain{animation:none}}
-
+@media print{.side,.tabs,.noprint,body::after{display:none!important}.shell{display:block}.main{padding:0}body{background:#fff}.paper{box-shadow:none;padding:0;max-width:none}}
 
 .btn,.btn.ghost{border-radius:0}.pill.warn{background:rgba(224,120,86,.14);color:#E09A7A}.pill.ok{background:rgba(110,190,140,.14);color:#8FD1A8}
 .paper .pill.ok,.paper .pill.warn{background:#F3EEE3;color:#7A5F2A}
-
-input,textarea{font:inherit;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:rgba(255,255,255,.04);width:100%;color-scheme:dark}
-.pending,.pending .mute{font-style:italic;color:#E09A7A}
-.sheets{display:grid;gap:24px;justify-items:center;margin-top:12px}
-.sheet{width:210mm;height:297mm;padding:12mm 13mm;background:#fff;color:#111;box-shadow:0 50px 90px -30px #000;font:10.5pt/1.45 Arial,Helvetica,sans-serif;overflow:hidden;display:flex;flex-direction:column}
-.lh{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
-.doc-contact{font-size:9pt;line-height:1.5;color:#333}.doc-title{font-size:28pt;line-height:1.1;font-weight:300}
-.doc-h{font-size:15pt;margin:18px 0 8px;font-family:Arial,sans-serif;font-weight:700}
-.xl{width:100%;border-collapse:collapse;margin:0}.xl td,.xl th{border:1px solid #1a1a1a;padding:6px 8px;text-align:left;vertical-align:top;font-size:10pt}
-.xl td.r,.xl th.r{text-align:right}.xl th{font-weight:700;text-align:center}
-.thanks{margin-top:auto;border:1px solid #1a1a1a;text-align:center;font-weight:700;font-size:13pt;padding:10px}
-.terms{font-size:9pt;line-height:1.42;padding-left:16px;margin:0;color:#222}.terms li{margin-bottom:5px}
-@media(max-width:900px){.sheet{zoom:.42}}
-*{border-radius:0!important}
-.blob{border-radius:50%!important}.tabs{border-radius:22px!important}.tabs a{border-radius:16px!important}
-@page{size:A4;margin:0}
-@media print{.side,.tabs,.noprint,body::after{display:none!important}.shell{display:block}.main{padding:0;max-width:none}body{background:#fff}
- .sheets{display:block;margin:0}.sheet{box-shadow:none;zoom:1!important;break-after:page;margin:0}}

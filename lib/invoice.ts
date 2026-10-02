@@ -15,11 +15,3 @@ export function buildInvoice(b: Booking, n: number) {
   const received = before + pay.amount, planned = plan(b.total);
   return { pay, before, received, remaining: b.total - received, phase: MILESTONES[idx]?.name ?? "Payment", planned, next: planned[n] ?? null };
 }
-// Global, sequential invoice numbers across all bookings (ordered by payment date).
-import { bookings } from "./data";
-export function invNo(bookingId: string, n: number) {
-  const all = bookings.flatMap(b => b.payments.map((p, i) => ({ id: b.id, n: i + 1, date: p.date })))
-    .sort((a, c) => a.date.localeCompare(c.date) || a.id.localeCompare(c.id) || a.n - c.n);
-  const k = all.findIndex(x => x.id === bookingId && x.n === n);
-  return invoiceNo(+all[k].date.slice(0, 4), k + 1);
-}

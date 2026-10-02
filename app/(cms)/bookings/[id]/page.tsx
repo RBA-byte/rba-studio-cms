@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { bookings, paidOf, PHASES } from "@/lib/data";
 import { advanceDue, conflicts, crewProgress, isConfirmed, slotLabel } from "@/lib/booking";
-import { invNo, plan } from "@/lib/invoice";
+import { invoiceNo, plan } from "@/lib/invoice";
 import { pkr } from "@/lib/calc";
 const R = (i: number) => ({ "--i": i } as React.CSSProperties);
 export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +28,6 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         {sched.map(m => <div className="row" key={m.name}><div>{m.name} ({m.pct}%)<div className="mute">{m.note}</div></div>
           <div style={{textAlign:"right"}}>{pkr(m.amount)}<div><span className={`pill ${m.done ? "ok" : "warn"}`}>{m.done ? "Paid" : "Due"}</span></div></div></div>)}
         <p className="mute" style={{marginBottom:6}}>Invoices</p>
-        {b.payments.map((p, i) => <Link key={i} className="row" href={`/invoices/${b.id}/${i + 1}`}><span>{invNo(b.id, i + 1)}</span><span className="mute">{p.date} · {pkr(p.amount)}</span></Link>)}</div>
+        {b.payments.map((p, i) => <Link key={i} className="row" href={`/invoices/${b.id}/${i + 1}`}><span>{invoiceNo(2026, i + 1)}</span><span className="mute">{p.date} · {pkr(p.amount)}</span></Link>)}</div>
     </div></>;
 }
