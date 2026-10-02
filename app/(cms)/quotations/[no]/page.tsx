@@ -1,31 +1,28 @@
-import { quotes } from "@/lib/quotes";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getQuote } from "@/lib/db";
 import { plan } from "@/lib/invoice";
-import { TERMS } from "@/lib/terms";
-import { BRAND, longDate } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { pkr } from "@/lib/calc";
-import PaperHeader from "@/components/PaperHeader";
+import { QuoteDoc } from "@/components/Doc";
 import PrintBar from "@/components/PrintBar";
+import { acceptQuotation, setQuotationStatus } from "@/app/actions";
+const STATUSES = ["Draft", "Sent", "Revision requested", "Accepted", "Rejected", "Expired"];
 export default async function Quote({ params }: { params: Promise<{ no: string }> }) {
   const { no } = await params;
-  const q = quotes.find(x => String(x.no) === no)!;
-  const total = q.items.reduce((s, i) => s + i.amount - i.discount, 0);
-  const msg = `Assalam o Alaikum ${q.customer}, please find your quotation #${q.no} from ${BRAND.name}. Total: ${pkr(total)}.`;
-  return <><PrintBar phone={q.phone} text={msg} subject={`Quotation #${q.no} — ${BRAND.name}`} />
-    <p className="noprint mute">Status: <span className="pill">{q.status}</span> Once the 50% advance ({pkr(plan(total)[0].amount)}) is received, the quotation becomes a confirmed booking and the dates are reserved.</p>
-    <article className="paper reveal">
-      <PaperHeader title="Quotation" meta={[["Date", longDate()], ["Quotation #", String(q.no)]]} />
-      <p className="mute" style={{margin:0}}>Bill to</p><p style={{margin:"2px 0 4px"}}><b>{q.customer}</b> · {q.phone.replace(/^92/, "+92 ")}</p>
-      <p className="mute" style={{marginTop:0}}>Comments: {q.comments}</p>
-      <table><thead><tr><th>Sr</th><th>Package details</th><th>Amount</th><th>Discount</th><th>Total</th></tr></thead><tbody>
-        {q.items.map((it, i) => <tr key={i}><td>{i + 1}</td><td><b>{it.title}</b><div className="mute">{it.sub}</div></td><td>{pkr(it.amount)}</td><td>{pkr(it.discount)}</td><td>{pkr(it.amount - it.discount)}</td></tr>)}
-      </tbody></table>
-      <h2>Services included</h2>
-      {q.services.map(s => <p key={s.event} style={{margin:"6px 0"}}><b>{s.event}:</b> <span className="mute">{s.crew.join(" · ")}</span></p>)}
-      <h2>Deliverables</h2><ul className="mute" style={{marginTop:0}}>{q.deliverables.map(d => <li key={d}>{d}</li>)}</ul>
-      <h2>Payment schedule</h2>
-      <table><tbody>{plan(total).map(m => <tr key={m.name}><td>{m.name} ({m.pct}%)<div className="mute">{m.note}</div></td><td>{pkr(m.amount)}</td></tr>)}
-        <tr><td><b>Total</b></td><td><b>{pkr(total)}</b></td></tr></tbody></table>
-      <p style={{textAlign:"center",letterSpacing:".2em",fontSize:12}} className="mute">THANK YOU FOR YOUR BUSINESS</p>
-      <section className="pb"><h2>Terms and conditions</h2><ol className="mute" style={{fontSize:12.5,lineHeight:1.65,paddingLeft:18}}>{TERMS.map((t, i) => <li key={i}>{t}</li>)}</ol></section>
-    </article></>;
+  const d = await getQuote(+no); if (!d) notFound();
+  const q = d.quote, msg = `Assalam o Alaikum ${q.customer}, please find your quotation #${q.no} from ${BRAND.name}. Total: ${pkr(d.total)}.`;
+  const wa = q.phone.replace(/\D/g, "").replace(/^0/, "92");
+  return <><PrintBar phone={wa} text={msg} subject={`Quotation #${q.no} — ${BRAND.name}`} />
+    <div className="card noprint" style={{ marginBottom: 16, display: "grid", gap: 12 }}>
+      <div className="row" style={{ border: 0, padding: 0, flexWrap: "wrap", gap: 10 }}>
+        <span>Status <span className="pill">{d.status}</span> · Revision {d.revision}</span>
+        {d.bookingId ? <Link className="btn" href={`/bookings/${d.bookingId}`}>View booking</Link> : <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link className="btn ghost" href={`/quotations/new?from=${d.no}`}>Revise</Link>
+          <form action={acceptQuotation}><input type="hidden" name="no" value={d.no} /><button className="btn">Accept &amp; create booking</button></form></div>}</div>
+      {!d.bookingId && <form action={setQuotationStatus} style={{ display: "flex", gap: 8 }}><input type="hidden" name="no" value={d.no} />
+        <select name="status" defaultValue={d.status}>{STATUSES.filter(s => s !== "Accepted").map(s => <option key={s}>{s}</option>)}</select><button className="btn ghost">Update status</button></form>}
+      <small className="mute">Accepting creates the booking, reserves the dates and adds crew slots. The 50% advance ({pkr(plan(d.total)[0].amount)}) confirms it.</small>
+      {d.revisions.length > 1 && <small className="mute">History: {d.revisions.map(r => `R${r.revision} ${pkr(r.total)} (${r.date})`).join(" · ")}</small>}</div>
+    <QuoteDoc q={q} /></>;
 }

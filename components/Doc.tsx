@@ -1,7 +1,7 @@
 import { BRAND, longDate } from "@/lib/brand";
 import { TERMS } from "@/lib/terms";
 import { pkr } from "@/lib/calc";
-import { buildInvoice, invNo, plan } from "@/lib/invoice";
+import { buildInvoice, invoiceNo, plan } from "@/lib/invoice";
 import { Booking } from "@/lib/data";
 import { Quote, quoteTotal } from "@/lib/doc";
 
@@ -25,7 +25,7 @@ export function TermsSheet() {
 export function QuoteDoc({ q }: { q: Quote }) {
   const total = quoteTotal(q), p = plan(total);
   return <div className="sheets">
-    <Sheet><Letterhead title="Quotation" meta={[["DATE", longDate(q.date)], ["Quotation #", String(q.no)], ["Customer ID", "NA"]]} />
+    <Sheet><Letterhead title="Quotation" meta={[["DATE", longDate(q.date)], ["Quotation #", String(q.no)], ["Customer ID", "NA"], ...(q.revision && q.revision > 1 ? [["Revision", `R${q.revision}`] as [string, string]] : [])]} />
       <BillTo name={q.customer} phone={q.phone} note={q.comments} />
       <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Package Details</th><th className="r">Amount (PKR)</th><th className="r">Discount</th><th className="r">Total (PKR)</th></tr></thead>
         <tbody>{q.items.map((it, i) => <tr key={i}><td>{i + 1}</td><td><b>{it.title}</b><div>{it.sub}</div></td>
@@ -44,7 +44,7 @@ export function QuoteDoc({ q }: { q: Quote }) {
 export function InvoiceDoc({ b, n }: { b: Booking; n: number }) {
   const i = buildInvoice(b, n);
   return <div className="sheets">
-    <Sheet><Letterhead title="Invoice" meta={[["DATE", longDate(i.pay.date)], ["Invoice #", invNo(b.id, n)], ["Quotation #", b.id]]} />
+    <Sheet><Letterhead title="Invoice" meta={[["DATE", longDate(i.pay.date)], ["Invoice #", invoiceNo(+i.pay.date.slice(0, 4), i.pay.seq)], ["Quotation #", b.ref]]} />
       <BillTo name={b.couple} phone={b.phone} note="None" />
       <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Payment Details</th><th className="r">Amount (PKR)</th><th className="r">Status</th></tr></thead>
         <tbody>{i.planned.map((m, k) => <tr key={m.name}><td>{k + 1}</td><td><b>{m.name} ({m.pct}%)</b><div>{m.note}</div></td>

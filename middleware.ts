@@ -1,8 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { COOKIE, token } from "@/lib/auth";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith("/login")) return NextResponse.next();
-  if (req.cookies.get(COOKIE)?.value === (await token())) return NextResponse.next();
-  return NextResponse.redirect(new URL("/login", req.url));
+  let res = NextResponse.next({ request: req });
+  const sb = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, { cookies: {
+    getAll: () => req.cookies.getAll(),
+    setAll: list => { list.forEach(({ name, value }) => req.cookies.set(name, value)); res = NextResponse.next({ request: req });
+      list.forEach(({ name, value, options }) => res.cookies.set(name, value, options)); },
+  } });
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user && !req.nextUrl.pathname.startsWith("/login")) return NextResponse.redirect(new URL("/login", req.url));
+  return res;
 }
 export const config = { matcher: ["/((?!_next|.*\\..*).*)"] };

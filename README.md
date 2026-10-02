@@ -1,4 +1,3 @@
 # RBA CMS
-Next.js 15 admin for RBA Films & Photography. Run `npm i && cp .env.example .env.local && npm run dev`.
-Set `ADMIN_PASSWORD` and `SESSION_SECRET` in Vercel, then add domain cms.rbaweddingfilms.com.
-`supabase/schema.sql` holds the Phase 1 tables with owner-only row level security. Dashboard currently reads `lib/data.ts`.
+Next.js 15 + Supabase. Env vars (server-side): SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
+Run supabase/schema.sql once in the Supabase SQL Editor. Log in with the user created in Supabase Auth.
