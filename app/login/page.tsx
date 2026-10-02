@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE, token } from "@/lib/auth";
+import LoginScene from "@/components/LoginScene";
 async function login(fd: FormData) {
   "use server";
   if (fd.get("password") !== process.env.ADMIN_PASSWORD) redirect("/login?error=1");
@@ -9,10 +10,11 @@ async function login(fd: FormData) {
 }
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
-  return <form action={login} className="card" style={{maxWidth:360,margin:"20vh auto"}}>
-    <h1 style={{margin:"0 0 16px"}}>RBA Films & Photography</h1>
+  return <LoginScene><form action={login} className="glass reveal">
+    <small className="eyebrow">RBA Films and Photography</small>
+    <h1 style={{margin:"6px 0 22px"}}>Welcome <em>back</em></h1>
     <label htmlFor="p">Password</label><input id="p" name="password" type="password" required autoFocus />
     {error && <p className="mute" role="alert">Incorrect password. Try again.</p>}
-    <p><button className="btn" style={{width:"100%"}}>Sign in</button></p>
-  </form>;
+    <p><button className="btn" style={{width:"100%"}}>Enter</button></p>
+  </form></LoginScene>;
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Booking, PHASES } from "@/lib/data";
+import { slotLabel } from "@/lib/booking";
 const iso = (y:number,m:number,d:number)=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 export default function Calendar({ bookings }: { bookings: Booking[] }) {
   const now = new Date();
@@ -35,7 +36,7 @@ export default function Calendar({ bookings }: { bookings: Booking[] }) {
       {b && ev ? <>
         <h2 style={{margin:0}}>{b.couple}</h2>
         <p className="mute">{ev.name} · {new Date(ev.date).toDateString()} · {ev.venue}</p>
-        <b>Crew</b>{b.crew.map(c=><div className="row" key={c.role}><span>{c.role}</span><span className="mute">{c.person ?? "Not assigned"}</span></div>)}
+        <b>Crew</b>{b.slots.filter(c=>c.event===ev.name).map(c=><div className="row" key={c.role}><span>{c.role}</span><span className="mute">{slotLabel(c)}</span></div>)}
         <p style={{marginBottom:0}}><b>Project timeline</b> <span className="pill">{PHASES[b.phase]}</span></p>
         <div className="tl">{PHASES.map((p,i)=><i key={p} className={i<=b.phase?"f":""} title={p}/>)}</div>
       </> : <p className="mute">Select a filled date to see the wedding details.</p>}
