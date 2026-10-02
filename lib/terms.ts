@@ -10,7 +10,7 @@ export const TERMS = [
   "Photos and videos may be shared on social media unless the client states otherwise before the event. Once shared, removal requests are not entertained.",
   "A minimum of 1 hour 30 minutes is required for the couple's shoot to deliver standard quality. Quality may be affected if this time is not given.",
   "In case of total data loss the company takes no responsibility, as all equipment is electronic and can malfunction. The client will, however, be refunded 75% of the total price.",
-  "Cancellation: (1) If the client cancels due to unforeseen circumstances, 25% of the total amount is refunded and the remaining 25% is non-refundable. (2) If we cancel, the full amount is refunded.",
+  "Cancellation: if the client cancels due to unforeseen circumstances, 25% of the total amount is refunded from the 50% advance and the remaining 25% is non-refundable. If we cancel, the full amount is refunded.",
   "The client must identify close family relatives and important people at the event.",
   "For location-based shoots, the client is responsible for shoot permits, security clearance and similar approvals.",
   "Every photographer has a specific editing style. The client cannot ask us to change our editing style.",

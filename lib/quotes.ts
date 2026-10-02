@@ -1,6 +1,6 @@
 // Sample quotation taken from the studio's Excel sheet. Replaced by database rows later.
 export const quotes = [{
-  no: 1029, customer: "Mr Faheem", phone: "923251000310", comments: "None",
+  no: 1029, status: "Sent", customer: "Mr Faheem", phone: "923251000310", comments: "None",
   items: [{ title: "Mehndi + Baraat + Waleema Coverage", sub: "Event dates: Nov 13th, 14th & 15th, 2026", amount: 150000, discount: 10000 }],
   services: [
     { event: "Mehndi", crew: ["1 × Photographer", "1 × Videographer"] },

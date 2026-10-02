@@ -11,7 +11,7 @@ async function login(fd: FormData) {
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   return <LoginScene><form action={login} className="glass reveal">
-    <small className="eyebrow">The Refractions Studio</small>
+    <small className="eyebrow">RBA Films and Photography</small>
     <h1 style={{margin:"6px 0 22px"}}>Welcome <em>back</em></h1>
     <label htmlFor="p">Password</label><input id="p" name="password" type="password" required autoFocus />
     {error && <p className="mute" role="alert">Incorrect password. Try again.</p>}

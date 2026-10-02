@@ -6,5 +6,5 @@ export default function Nav() {
   const p = usePathname();
   const on = (h: string) => (h === "/" ? p === "/" : p.startsWith(h));
   const links = items.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : ""}>{l}</Link>);
-  return <><aside className="side"><b>Refractions<span>.</span></b><small>Studio CMS</small>{links}</aside><nav className="tabs">{links}</nav></>;
+  return <><aside className="side"><b>RBA<span>.</span></b><small>Films & Photography</small>{links}</aside><nav className="tabs">{links}</nav></>;
 }
