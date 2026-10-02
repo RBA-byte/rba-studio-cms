@@ -1,0 +1,9 @@
+export const PHASES = ["Quotation","Booked","Shoot","Selection","Editing","Albums","Delivered"] as const;
+export type Payment = { date: string; amount: number; seq: number };
+export type Slot = { id?: string; event: string; role: string; status: "assigned" | "pending" | "agency"; person?: string; agency?: string };
+export type Task = { id: string; ord: number; label: string; done: boolean; doneOn?: string };
+export type Booking = { id: string; ref: string; couple: string; phone: string; status: string; phase: number; total: number;
+  cancelled: boolean; refund: number; cancelReason: string;
+  events: { id: string; name: string; date: string; venue: string; outdoor: boolean }[]; slots: Slot[]; payments: Payment[]; tasks: Task[] };
+export const paidOf = (b: Booking) => b.payments.reduce((s, p) => s + p.amount, 0);
+export const netOf = (b: Booking) => paidOf(b) - b.refund;
