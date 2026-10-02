@@ -10,7 +10,7 @@ const refresh = () => revalidatePath("/", "layout");
 export async function login(fd: FormData) {
   const sb = await createClient();
   const { error } = await sb.auth.signInWithPassword({ email: String(fd.get("email")), password: String(fd.get("password")) });
-  if (error) redirect("/login?error=1");
+  if (error) redirect("/login?error=" + encodeURIComponent(error.message));
   redirect("/");
 }
 export async function logout() { const sb = await createClient(); await sb.auth.signOut(); redirect("/login"); }
