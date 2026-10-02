@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 export default function LoginScene({ children }: { children: React.ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = root.current!, blobs = [...el.querySelectorAll<HTMLElement>(".blob")];
+    const el = root.current!, blobs = Array.from(el.querySelectorAll<HTMLElement>(".blob"));
     const put = (b: HTMLElement, x: number, y: number) => (b.style.transform = `translate(${x}px,${y}px)`);
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (matchMedia("(pointer: coarse)").matches) { // phones: blobs wander randomly
