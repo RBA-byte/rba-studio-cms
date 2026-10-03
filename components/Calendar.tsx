@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { Booking, PHASES } from "@/lib/data";
 import { slotLabel } from "@/lib/booking";
+import { shortDate } from "@/lib/brand";
 import { progressOf } from "@/lib/checklist";
 const iso = (y:number,m:number,d:number)=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 export default function Calendar({ bookings }: { bookings: Booking[] }) {
@@ -36,7 +37,7 @@ export default function Calendar({ bookings }: { bookings: Booking[] }) {
     <div className="card">
       {b && ev ? <>
         <h2 style={{margin:0}}>{b.couple}</h2>
-        <p className="mute">{ev.name} · {new Date(ev.date).toDateString()}{ev.venue && ` · ${ev.venue}`} {ev.outdoor && <span className="pill">Outdoor shoot</span>}</p>
+        <p className="mute">{ev.name} · {shortDate(ev.date)}{ev.venue && ` · ${ev.venue}`} {ev.outdoor && <span className="pill">Outdoor shoot</span>}</p>
         <b>Crew</b>{b.slots.filter(c=>c.event===ev.name).map(c=><div className="row" key={c.role}><span>{c.role}</span><span className="mute">{slotLabel(c)}</span></div>)}
         <p style={{marginBottom:0}}><b>Project timeline</b> <span className="pill">{PHASES[b.phase]}</span> <span className="mute">{progressOf(b.tasks).pct}% complete</span></p>
         <div className="tl">{PHASES.map((p,i)=><i key={p} className={i<=b.phase?"f":""} title={p}/>)}</div>

@@ -5,6 +5,6 @@ export type Slot = { id?: string; event: string; role: string; status: "assigned
 export type Task = { id: string; ord: number; label: string; done: boolean; doneOn?: string };
 export type Booking = { id: string; ref: string; couple: string; phone: string; status: string; phase: number; total: number;
   cancelled: boolean; cancelledAt: string; refund: number; cancelReason: string;
-  events: { id: string; name: string; date: string; venue: string; outdoor: boolean }[]; slots: Slot[]; payments: Payment[]; tasks: Task[]; quote?: Quote };
+  events: { id: string; name: string; date: string; venue: string; outdoor: boolean }[]; slots: Slot[]; payments: Payment[]; tasks: Task[]; quote?: Quote; addons: { id: string; description: string; amount: number }[] };
 export const paidOf = (b: Booking) => b.payments.reduce((s, p) => s + p.amount, 0);
 export const netOf = (b: Booking) => paidOf(b) - b.refund;

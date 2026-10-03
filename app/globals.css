@@ -119,3 +119,12 @@ details.dropd[open]>.dd{animation:reveal .6s cubic-bezier(.2,.7,.2,1) both;margi
 .xlr tfoot td{font-weight:700;border-top:2px solid var(--gold)}
 @media print{.rep .xlr th,.rep .xlr td{border-color:#999;color:#000;background:#fff!important}.xlscroll{overflow:visible}}
 @media(max-width:900px){.tabs{bottom:28px}.main{padding-bottom:130px}}
+/* round 5 */
+.chev{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px!important;color:var(--mute);flex:none;transition:transform .45s cubic-bezier(.2,.7,.2,1),color .3s,border-color .3s;transform-origin:50% 50%}
+details.dropd:hover .chev{color:var(--gold);border-color:rgba(201,169,106,.4)}details.dropd[open] .chev{transform:rotate(180deg);color:var(--gold)}
+.slot{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.combo{display:flex;align-items:center;border:1px solid var(--line);background:rgba(255,255,255,.04);min-width:0}
+.combo input{border:0;background:none;flex:1;min-width:0;width:auto}.combo .sep{width:1px;align-self:stretch;margin:9px 0;background:rgba(255,255,255,.18);flex:none}
+.combo input.amt{flex:0 0 38%;text-align:right}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:900px){.slot{grid-template-columns:1fr;gap:4px;padding:10px 0}.evform{grid-template-columns:1fr 1fr}.evform .vn{grid-column:1/-1}}

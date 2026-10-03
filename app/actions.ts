@@ -58,7 +58,7 @@ export async function acceptQuotation(fd: FormData) {
   fail((await sb.from("quotations").update({ status: "Accepted" }).eq("id", q!.id)).error);
   refresh(); redirect(`/bookings/${b.data!.id}`);
 }
-// One Save for the whole booking: event dates/venues plus crew status, name and expense.
+// One Save for the whole booking. A crew slot is assigned when a name is entered ("Self" = no expense).
 export async function saveBooking(fd: FormData) {
   const sb = await createClient(), keys = [...fd.keys()];
   const ids = (p: string) => [...new Set(keys.filter(k => k.startsWith(p)).map(k => k.split("_")[1]))];
@@ -66,10 +66,33 @@ export async function saveBooking(fd: FormData) {
   for (const id of ids("event_")) jobs.push(sb.from("booking_events").update({ event_date: String(fd.get(`event_${id}_date`)) || null, venue: String(fd.get(`event_${id}_venue`) ?? "").trim() || null }).eq("id", id));
   for (const id of ids("slot_")) {
     const person = String(fd.get(`slot_${id}_person`) ?? "").trim(), self = /^self$/i.test(person);
-    const status = person || fd.get(`slot_${id}_status`) === "assigned" ? "assigned" : "pending";
-    jobs.push(sb.from("booking_slots").update({ status, person: person || null, agency: null, cost: self ? 0 : Math.max(0, Number(fd.get(`slot_${id}_cost`)) || 0) }).eq("id", id));
+    jobs.push(sb.from("booking_slots").update({ status: person ? "assigned" : "pending", person: person || null, agency: null, cost: self ? 0 : Math.max(0, Number(fd.get(`slot_${id}_cost`)) || 0) }).eq("id", id));
   }
   (await Promise.all(jobs)).forEach(r => fail(r.error));
+  refresh();
+}
+export async function addAddon(fd: FormData) {
+  const sb = await createClient(), id = String(fd.get("booking")), amount = Number(fd.get("amount")), description = String(fd.get("description") ?? "").trim();
+  if (!description || !(amount > 0)) throw new Error("Enter a description and an amount.");
+  const { data: bk, error } = await sb.from("bookings").select("total,status").eq("id", id).single(); fail(error);
+  if (bk!.status === "Cancelled") throw new Error("This booking is cancelled.");
+  fail((await sb.from("booking_addons").insert({ booking_id: id, description, amount })).error);
+  fail((await sb.from("bookings").update({ total: Number(bk!.total) + amount }).eq("id", id)).error);
+  const event = String(fd.get("event") ?? ""), role = String(fd.get("role") ?? "").trim();
+  if (event && role) {
+    const { data: last } = await sb.from("booking_slots").select("ord").eq("booking_id", id).order("ord", { ascending: false }).limit(1);
+    fail((await sb.from("booking_slots").insert({ booking_id: id, ord: (last?.[0]?.ord ?? 0) + 1, event_name: event, role })).error);
+  }
+  refresh();
+}
+export async function removeAddon(fd: FormData) {
+  const sb = await createClient();
+  const { data: a, error } = await sb.from("booking_addons").select("booking_id,amount").eq("id", String(fd.get("id"))).single(); fail(error);
+  const { data: bk, error: e2 } = await sb.from("bookings").select("total,payments(amount)").eq("id", a!.booking_id).single(); fail(e2);
+  const paid = (bk!.payments as any[]).reduce((s, p) => s + Number(p.amount), 0), total = Number(bk!.total) - Number(a!.amount);
+  if (total < paid) throw new Error("Cannot remove: the client has already paid more than the new total.");
+  fail((await sb.from("booking_addons").delete().eq("id", String(fd.get("id")))).error);
+  fail((await sb.from("bookings").update({ total }).eq("id", a!.booking_id)).error);
   refresh();
 }
 export async function recordPayment(fd: FormData) {

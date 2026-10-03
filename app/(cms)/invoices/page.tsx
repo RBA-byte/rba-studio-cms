@@ -13,7 +13,7 @@ export default async function Invoices() {
       <div className="card stat"><small>Pending</small><div className="num pending">{pkr(pending)}</div></div></div>
     {all.filter(b => b.payments.length).map((b, k) => { const due = b.cancelled ? 0 : b.total - paidOf(b); return <details className="card dropd reveal" style={{ ...R(k + 2), marginBottom: 14 }} key={b.id}>
       <summary><div><h2 style={{ margin: 0 }}>{b.couple}</h2><span className={due > 0 ? "pending" : "mute"}>{b.cancelled ? `Cancelled · refunded ${pkr(b.refund)}` : `Paid ${pkr(paidOf(b))} · ${due > 0 ? `Pending ${pkr(due)}` : "Settled"}`}</span></div>
-        <span className="chev" aria-hidden>⌄</span></summary>
+        <span className="chev" aria-hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 9.5 12 15l5.5-5.5" /></svg></span></summary>
       <div className="dd">{b.payments.map((p, i) => <Link key={i} className={`row${due > 0 ? " pending" : ""}`} href={`/invoices/${b.id}/${i + 1}`}>
         <div>{invoiceNo(+p.date.slice(0, 4), p.seq)}<div className="mute">{p.date}</div></div><span className="num">{pkr(p.amount)}</span></Link>)}</div></details>; })}</>;
 }

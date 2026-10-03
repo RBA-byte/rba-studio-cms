@@ -9,7 +9,7 @@ import { pkr } from "@/lib/calc";
 import { shortDate, todayPK } from "@/lib/brand";
 import { confirmationText, dueLabel, nextDue, reminderText } from "@/lib/reminders";
 import MsgButtons from "@/components/MsgButtons";
-import { cancelBooking, createTasks, recordPayment, restoreBooking, saveBooking, toggleTask } from "@/app/actions";
+import { addAddon, cancelBooking, createTasks, recordPayment, removeAddon, restoreBooking, saveBooking, toggleTask } from "@/app/actions";
 const R = (i: number) => ({ "--i": i } as React.CSSProperties);
 export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params, all = await getBookings(), today = todayPK();
@@ -18,7 +18,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const adv = b.payments[0]?.amount ?? 0, rows = schedule(b), next = rows.find(r => r.state !== "paid"), pr = progressOf(b.tasks);
   const suggest = next ? Math.min(left, next.state === "part" ? left : next.amount) : "";
   const last = lastEventDate(b.events), open = unlocked(b.tasks, last, today), crewCost = b.slots.reduce((s, x) => s + x.cost, 0);
-  const dueNow = nextDue(b, today);
+  const dueNow = nextDue(b, today), addonSum = b.addons.reduce((x, a) => x + a.amount, 0);
   const sig = b.events.map(e => e.date + e.venue).join() + b.slots.map(s => s.status + s.person + s.cost).join();
   return <>
     <Link href="/bookings" className="mute">← All bookings</Link>
@@ -37,11 +37,10 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         <form action={saveBooking} key={sig}>
           {b.events.map(e => <div key={e.id} style={{marginTop:18}}>
             <div className="evform"><b>{e.name}{e.outdoor && <span className="pill" style={{marginLeft:8}}>Outdoor</span>}</b>
-              <input type="date" name={`event_${e.id}_date`} defaultValue={e.date} aria-label="Date" /><input name={`event_${e.id}_venue`} defaultValue={e.venue} placeholder="Venue" aria-label="Venue" /></div>
-            {b.slots.filter(s => s.event === e.name).map(s => <div className="slot" key={s.id}><span>{s.role}</span>
-              <select name={`slot_${s.id}_status`} defaultValue={s.status} aria-label="Status"><option value="pending">Not assigned</option><option value="assigned">Assigned</option></select>
-              <input name={`slot_${s.id}_person`} defaultValue={s.person} placeholder="Name (or Self)" aria-label="Name" />
-              <input name={`slot_${s.id}_cost`} type="number" min={0} defaultValue={s.cost || ""} placeholder="Expense (PKR)" aria-label="Crew expense" /></div>)}</div>)}
+              <input type="date" name={`event_${e.id}_date`} defaultValue={e.date} aria-label="Date" /><input className="vn" name={`event_${e.id}_venue`} defaultValue={e.venue} placeholder="Venue" aria-label="Venue" /></div>
+            {b.slots.filter(s => s.event === e.name).map(s => <div className="slot" key={s.id}><span>{s.role}</span><div className="combo">
+                <input name={`slot_${s.id}_person`} defaultValue={s.person} placeholder="Crew name (or Self)" aria-label="Crew name" /><span className="sep" />
+                <input className="amt" name={`slot_${s.id}_cost`} type="number" min={0} defaultValue={s.cost || ""} placeholder="Expense" aria-label="Crew expense" /></div></div>)}</div>)}
           <div className="row" style={{border:0,paddingBottom:0}}><small className="mute">Crew expenses {pkr(crewCost)} · count as project expenses. “Self” = no expense.</small><button className="btn">Save changes</button></div></form>}</div>
       <div className="card reveal" style={R(4)}><h2 style={{margin:0}}>Payments</h2><p className="mute">Total agreed {pkr(b.total)} · received {pkr(paid)} · balance {pkr(left)}</p>
         {rows.map(m => <div className="row" key={m.name}><div>{m.name}<div className="mute">{m.note}</div></div>
@@ -56,6 +55,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         <p className="mute" style={{marginBottom:6}}>Invoices</p>
         {b.payments.map((p, i) => <Link key={i} className="row" href={`/invoices/${b.id}/${i + 1}`}><span>{invoiceNo(+p.date.slice(0, 4), p.seq)}</span><span className="mute">{p.date} · {pkr(p.amount)}</span></Link>)}</div>
     </div>
+    {!b.cancelled && <div className="card reveal" style={{...R(5),marginTop:16}}><h2 style={{margin:0}}>Add to offer</h2>
+      <p className="mute">Client asked for an extra service? Add it here: the total, payment schedule, invoices and quotation PDF update. Base offer {pkr(b.total - addonSum)}.</p>
+      {b.addons.map(a => <form action={removeAddon} className="row" key={a.id}><input type="hidden" name="id" value={a.id} /><span>{a.description}</span><span style={{display:"flex",gap:12,alignItems:"center"}}>{pkr(a.amount)}<button className="btn ghost">Remove</button></span></form>)}
+      <form action={addAddon} style={{display:"grid",gap:8,marginTop:14}}><input type="hidden" name="booking" value={b.id} />
+        <input name="description" placeholder="Service (e.g. Extra drone coverage)" required /><input name="amount" type="number" min={1} placeholder="Amount (PKR)" required />
+        <div className="two"><select name="event" defaultValue=""><option value="">No extra crew slot</option>{b.events.map(e => <option key={e.id} value={e.name}>{e.name}</option>)}</select><input name="role" placeholder="Crew role (optional)" /></div>
+        <button className="btn">Add to offer</button></form></div>}
     {!b.cancelled && <div id="timeline" className="card reveal" style={{...R(5),marginTop:16}}>
       <div className="row" style={{border:0,padding:0}}><h2 style={{margin:0}}>Project timeline</h2>{b.tasks.length > 0 && <span className="mute">{pr.pct}% complete · {pr.done} done · {pr.pending} pending</span>}</div>
       {b.tasks.length > 0 ? <><div className="bar"><i style={{width:`${pr.pct}%`}} /></div>

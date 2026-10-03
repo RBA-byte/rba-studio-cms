@@ -51,6 +51,7 @@ export function InvoiceDoc({ b, n }: { b: Booking; n: number }) {
       {q && it && <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Package Details</th><th className="r">Amount (PKR)</th><th className="r">Discount</th><th className="r">Total (PKR)</th></tr></thead>
         <tbody><tr><td>1</td><td><b>{it.title}</b><div>{dates.length ? `Event dates: ${dates.map(shortDate).join(", ")}` : it.sub}</div></td>
           <td className="r">{it.amount.toLocaleString("en-PK")}</td><td className="r">{it.discount.toLocaleString("en-PK")}</td><td className="r">{(it.amount - it.discount).toLocaleString("en-PK")}</td></tr>
+          {b.addons.map((x, k) => <tr key={x.id}><td>{k + 2}</td><td><b>{x.description}</b><div>Added after acceptance</div></td><td className="r">{x.amount.toLocaleString("en-PK")}</td><td className="r">0</td><td className="r">{x.amount.toLocaleString("en-PK")}</td></tr>)}
           <tr><td colSpan={5}><b>SERVICES INCLUDED</b>
             {q.services.map(s => <div key={s.event} style={{ marginTop: 6 }}><b>({s.event}):</b> {s.crew.join(" · ")}</div>)}
             <div style={{ marginTop: 8 }}><b>DELIVERABLES:</b> {q.deliverables.join(" · ")}</div></td></tr></tbody></table>}
