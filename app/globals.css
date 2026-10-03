@@ -128,3 +128,14 @@ details.dropd:hover .chev{color:var(--gold);border-color:rgba(201,169,106,.4)}de
 .combo input.amt{flex:0 0 38%;text-align:right}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media(max-width:900px){.slot{grid-template-columns:1fr;gap:4px;padding:10px 0}.evform{grid-template-columns:1fr 1fr}.evform .vn{grid-column:1/-1}}
+
+/* terms: two columns, fits A4 under the header */
+.terms2{flex:1;min-height:0;column-count:2;column-gap:7mm;column-fill:auto;line-height:1.3;color:#222;overflow:hidden}
+.terms2 h3{margin:5px 0 2px;font-size:1.02em;letter-spacing:.04em;text-transform:uppercase;break-after:avoid;font-family:Arial,sans-serif}
+.terms2 .tsec:first-child h3{margin-top:0}.terms2 ul{margin:0;padding-left:0;list-style:none}
+.terms2 li{break-inside:avoid;margin-bottom:2.5px;padding-left:9px;position:relative}.terms2 li::before{content:"\2022";position:absolute;left:0}
+.terms2 .tclose{font-weight:700;margin:5px 0 0;break-inside:avoid}
+/* date inputs: keep the weekday visible (the field was clipping its start) */
+input[type=date]{min-width:0;padding-left:10px;padding-right:8px;font-size:14px}
+.evform{grid-template-columns:minmax(70px,.6fr) minmax(190px,1.3fr) minmax(0,1.4fr)}
+@media(max-width:900px){.evform{grid-template-columns:minmax(0,.8fr) minmax(0,1.3fr)}}

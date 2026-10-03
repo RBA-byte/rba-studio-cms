@@ -145,3 +145,10 @@ export async function deleteExpense(fd: FormData) {
   fail((await sb.from("expenses").delete().eq("id", String(fd.get("id")))).error);
   refresh();
 }
+export async function saveSettings(fd: FormData) {
+  const sb = await createClient(), t = (k: string) => String(fd.get(k) ?? "").trim(), n = (k: string) => Math.max(0, Number(fd.get(k)) || 0);
+  const data = { crewRate: n("crewRate"), albumRate: n("albumRate"), outdoorCost: n("outdoorCost"),
+    brand: { name: t("name"), tagline: t("tagline"), address: t("address"), cell: t("cell"), email: t("email") } };
+  fail((await sb.from("settings").upsert({ id: 1, data })).error);
+  refresh(); redirect("/settings?saved=1");
+}

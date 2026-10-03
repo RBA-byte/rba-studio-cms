@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 const items = [["/", "Home"], ["/bookings", "Bookings"], ["/quotations", "Quotes"], ["/invoices", "Invoices"], ["/finance", "Finance"], ["/reports", "Reports"], ["/crew", "Crew"]];
-const extra = [["/clients", "Clients"]]; // sidebar only (phone: button on the dashboard)
+const extra = [["/clients", "Clients"], ["/settings", "Settings"]]; // sidebar only (phone: button on the dashboard)
 export default function Nav() {
   const p = usePathname();
   const on = (h: string) => (h === "/" ? p === "/" : p.startsWith(h));

@@ -1,15 +1,16 @@
 import { BRAND, longDate, shortDate } from "@/lib/brand";
-import { TERMS } from "@/lib/terms";
+import { TERMS_CLOSING, TERMS_PT, termsFor } from "@/lib/terms";
+type Brand = typeof BRAND;
 import { pkr } from "@/lib/calc";
 import { buildInvoice, invoiceNo, plan } from "@/lib/invoice";
 import { Booking } from "@/lib/data";
 import { Quote, quoteTotal } from "@/lib/doc";
 
 const Sheet = ({ children }: { children: React.ReactNode }) => <section className="sheet">{children}</section>;
-const Contact = () => <div className="doc-contact">{BRAND.tagline}<br />{BRAND.address}<br />Cell: {BRAND.cell}<br />Email: {BRAND.email}</div>;
-function Letterhead({ title, meta }: { title?: string; meta?: [string, string][] }) {
+const Contact = ({ brand }: { brand: Brand }) => <div className="doc-contact">{brand.tagline}<br />{brand.address}<br />Cell: {brand.cell}<br />Email: {brand.email}</div>;
+function Letterhead({ title, meta, brand }: { title?: string; meta?: [string, string][]; brand: Brand }) {
   return <header className="lh">
-    <div><img src="/logo.png" alt={BRAND.name} style={{ height: "17mm", display: "block", marginBottom: 6 }} /><Contact /></div>
+    <div><img src="/logo.png" alt={brand.name} style={{ height: "17mm", display: "block", marginBottom: 6 }} /><Contact brand={brand} /></div>
     {title && <div style={{ textAlign: "right" }}><div className="doc-title">{title}</div>
       {meta?.map(([k, v]) => <div key={k} style={{ marginTop: 3 }}><b>{k}</b> &nbsp; {v}</div>)}</div>}
   </header>;
@@ -18,14 +19,15 @@ function BillTo({ name, phone, note }: { name: string; phone: string; note?: str
   return <div style={{ margin: "16px 0" }}><b>Bill To:</b><div>{name}</div><div>{phone.replace(/^92/, "+92 ")}</div>
     {note && <div style={{ marginTop: 6 }}><b>Comments or special instructions:</b> {note}</div>}</div>;
 }
-export function TermsSheet() {
-  return <Sheet><Letterhead /><h2 className="doc-h">Terms And Conditions</h2>
-    <ul className="terms">{TERMS.map((t, i) => <li key={i}>{t}</li>)}</ul></Sheet>;
+export function TermsSheet({ brand }: { brand: Brand }) {
+  return <Sheet><Letterhead brand={brand} /><h2 className="doc-h" style={{ margin: "8px 0 6px" }}>Terms &amp; Conditions</h2>
+    <div className="terms2" style={{ fontSize: `${TERMS_PT}pt` }}>{termsFor().map(sec => <div className="tsec" key={sec.title}><h3>{sec.title}</h3><ul>{sec.items.map((t, i) => <li key={i}>{t}</li>)}</ul></div>)}
+      <p className="tclose">{TERMS_CLOSING}</p></div></Sheet>;
 }
-export function QuoteDoc({ q }: { q: Quote }) {
+export function QuoteDoc({ q, brand = BRAND }: { q: Quote; brand?: Brand }) {
   const total = quoteTotal(q), p = plan(total);
   return <div className="sheets">
-    <Sheet><Letterhead title="Quotation" meta={[["DATE", longDate(q.date)], ["Quotation #", String(q.no)], ["Customer ID", "NA"], ...(q.revision && q.revision > 1 ? [["Revision", `R${q.revision}`] as [string, string]] : [])]} />
+    <Sheet><Letterhead brand={brand} title="Quotation" meta={[["DATE", longDate(q.date)], ["Quotation #", String(q.no)], ["Customer ID", "NA"], ...(q.revision && q.revision > 1 ? [["Revision", `R${q.revision}`] as [string, string]] : [])]} />
       <BillTo name={q.customer} phone={q.phone} note={q.comments} />
       <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Package Details</th><th className="r">Amount (PKR)</th><th className="r">Discount</th><th className="r">Total (PKR)</th></tr></thead>
         <tbody>{q.items.map((it, i) => <tr key={i}><td>{i + 1}</td><td><b>{it.title}</b><div>{it.sub}</div></td>
@@ -39,14 +41,14 @@ export function QuoteDoc({ q }: { q: Quote }) {
             <div>- 25% is to be paid on the collection of unedited images for selection purposes. (PKR {p[2].amount.toLocaleString("en-PK")})</div></td></tr>
           <tr><td colSpan={4} className="r"><b>Total</b></td><td className="r"><b>{total.toLocaleString("en-PK")}</b></td></tr></tbody></table>
       <div className="thanks">THANK YOU FOR YOUR BUSINESS!</div></Sheet>
-    <TermsSheet /></div>;
+    <TermsSheet brand={brand} /></div>;
 }
-export function InvoiceDoc({ b, n }: { b: Booking; n: number }) {
+export function InvoiceDoc({ b, n, brand = BRAND }: { b: Booking; n: number; brand?: Brand }) {
   const i = buildInvoice(b, n), dates = b.events.map(e => e.date).filter(Boolean).sort(), first = dates[0], last = dates[dates.length - 1];
   const q = b.quote, it = q?.items[0];
   const status = (k: number) => k < i.mi ? `Paid on ${shortDate(b.payments[k].date)}` : k === i.mi ? `Paid now · ${shortDate(i.pay.date)}` : `Due ${shortDate(k === 1 ? first : last)}`;
   return <div className="sheets">
-    <Sheet><Letterhead title="Invoice" meta={[["DATE", longDate(i.pay.date)], ["Invoice #", invoiceNo(+i.pay.date.slice(0, 4), i.pay.seq)], ["Quotation #", b.ref]]} />
+    <Sheet><Letterhead brand={brand} title="Invoice" meta={[["DATE", longDate(i.pay.date)], ["Invoice #", invoiceNo(+i.pay.date.slice(0, 4), i.pay.seq)], ["Quotation #", b.ref]]} />
       <BillTo name={b.couple} phone={b.phone} note="None" />
       {q && it && <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Package Details</th><th className="r">Amount (PKR)</th><th className="r">Discount</th><th className="r">Total (PKR)</th></tr></thead>
         <tbody><tr><td>1</td><td><b>{it.title}</b><div>{dates.length ? `Event dates: ${dates.map(shortDate).join(", ")}` : it.sub}</div></td>
@@ -65,5 +67,5 @@ export function InvoiceDoc({ b, n }: { b: Booking; n: number }) {
           <tr><td colSpan={3} className="r"><b>Remaining balance</b></td><td className="r"><b>{i.remaining.toLocaleString("en-PK")}</b></td></tr></tbody></table>
       {i.next && <p style={{ margin: "8px 0" }}>Next payment: {i.next.name}, {pkr(i.next.amount)} ({i.next.note.toLowerCase()}).</p>}
       <div className="thanks">THANK YOU FOR YOUR BUSINESS!</div></Sheet>
-    <TermsSheet /></div>;
+    <TermsSheet brand={brand} /></div>;
 }

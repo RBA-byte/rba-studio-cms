@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveQuotation } from "@/app/actions";
 import Link from "next/link";
-import { calcQuotation, DEFAULT_RATES, pkr } from "@/lib/calc";
+import { calcQuotation, pkr } from "@/lib/calc";
 import type { Quote } from "@/lib/doc";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Day = { event: string; date: string; venue: string; outdoor: boolean; p: number; v: number; d: number };
@@ -13,12 +13,12 @@ const fmt = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numer
 function Num({ l, v, set }: { l: string; v: number; set: (n: number) => void }) {
   return <div><label>{l}</label><input type="number" min={0} value={v} onChange={e => set(Math.max(0, +e.target.value || 0))} /></div>;
 }
-export default function Builder({ initial, no }: { initial?: any; no?: number }) {
+export default function Builder({ initial, no, defaults }: { initial?: any; no?: number; defaults: { crewRate: number; albumRate: number; outdoorCost: number } }) {
   const router = useRouter(); const [busy, start] = useTransition(); const [err, setErr] = useState("");
   const [customer, setCustomer] = useState<string>(initial?.customer ?? ""), [phone, setPhone] = useState<string>(initial?.phone ?? ""), [comments, setComments] = useState<string>(initial?.comments ?? "None");
   const [days, setDays] = useState<Day[]>((initial?.days ?? [mk(0), mk(1), mk(2)]).map((d: Day) => ({ ...mk(0), ...d })));
-  const [outdoorCost, setOutdoorCost] = useState<number>(initial?.outdoorCost ?? 15000);
-  const [albums, setAlbums] = useState<number>(initial?.albums ?? 2), [crewRate, setCrewRate] = useState<number>(initial?.crewRate ?? DEFAULT_RATES.photographer), [albumRate, setAlbumRate] = useState<number>(initial?.albumRate ?? DEFAULT_RATES.album);
+  const [outdoorCost, setOutdoorCost] = useState<number>(initial?.outdoorCost ?? defaults.outdoorCost);
+  const [albums, setAlbums] = useState<number>(initial?.albums ?? 2), [crewRate, setCrewRate] = useState<number>(initial?.crewRate ?? defaults.crewRate), [albumRate, setAlbumRate] = useState<number>(initial?.albumRate ?? defaults.albumRate);
   const [profit, setProfit] = useState<number>(initial?.profit ?? 0), [discount, setDiscount] = useState<number>(initial?.discount ?? 0), [pct, setPct] = useState<boolean>(initial?.pct ?? false);
   const [deliv, setDeliv] = useState<string>(initial?.deliv ?? "3 × Event coverage videos (30–45 min)\n1 × Event Highlights\nUnlimited RAW softcopies");
   const setN = (n: number) => setDays(d => n > d.length ? [...d, ...Array.from({ length: n - d.length }, (_, k) => mk(d.length + k))] : d.slice(0, n));

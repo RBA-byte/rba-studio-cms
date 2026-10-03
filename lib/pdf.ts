@@ -1,6 +1,7 @@
 import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from "pdf-lib";
 import { BRAND, longDate, shortDate } from "./brand";
-import { TERMS } from "./terms";
+type Brand = typeof BRAND;
+import { TERMS_CLOSING, termsFor } from "./terms";
 import { buildInvoice, invoiceNo, plan } from "./invoice";
 import { Quote, quoteTotal } from "./doc";
 import type { Booking } from "./data";
@@ -13,10 +14,10 @@ const num = (x: number) => x.toLocaleString("en-PK");
 
 class P {
   page: PDFPage; y = H - M;
-  private constructor(public doc: PDFDocument, public f: PDFFont, public fb: PDFFont, public logo: PDFImage | null) { this.page = doc.addPage([W, H]); }
-  static async create(logo: ArrayBuffer | null) {
+  private constructor(public doc: PDFDocument, public f: PDFFont, public fb: PDFFont, public logo: PDFImage | null, public brand: Brand) { this.page = doc.addPage([W, H]); }
+  static async create(logo: ArrayBuffer | null, brand: Brand = BRAND) {
     const doc = await PDFDocument.create();
-    return new P(doc, await doc.embedFont(StandardFonts.Helvetica), await doc.embedFont(StandardFonts.HelveticaBold), logo ? await doc.embedPng(logo).catch(() => null) : null);
+    return new P(doc, await doc.embedFont(StandardFonts.Helvetica), await doc.embedFont(StandardFonts.HelveticaBold), logo ? await doc.embedPng(logo).catch(() => null) : null, brand);
   }
   safe(s: string, f: PDFFont) { const ok = new Set(f.getCharacterSet()); return Array.from(s.replace(/[\u00a0\u202f\u2009]/g, " ")).map(c => (ok.has(c.codePointAt(0)!) ? c : "?")).join(""); }
   width(s: string, f: PDFFont, sz: number) { return f.widthOfTextAtSize(this.safe(s, f), sz); }
@@ -38,8 +39,8 @@ class P {
   header(title?: string, meta: [string, string][] = []) {
     const top = this.y; let left = top;
     if (this.logo) { const h = 42, w = (this.logo.width * h) / this.logo.height; this.page.drawImage(this.logo, { x: M, y: top - h, width: w, height: h }); left = top - h - 7; }
-    else { this.put(BRAND.name, M, top - 16, 15, true); left = top - 24; }
-    for (const l of [BRAND.tagline, BRAND.address, `Cell: ${BRAND.cell}`, `Email: ${BRAND.email}`]) { this.put(l, M, left - 8, 8, false, GREY); left -= 11; }
+    else { this.put(this.brand.name, M, top - 16, 15, true); left = top - 24; }
+    for (const l of [this.brand.tagline, this.brand.address, `Cell: ${this.brand.cell}`, `Email: ${this.brand.email}`]) { this.put(l, M, left - 8, 8, false, GREY); left -= 11; }
     let right = top;
     if (title) {
       this.put(title, W - M - this.width(title, this.f, 26), top - 24, 26);
@@ -70,11 +71,29 @@ class P {
   }
   banner() { this.y -= 14; if (this.y - 30 < M) this.newPage(); this.page.drawRectangle({ x: M, y: this.y - 28, width: CW, height: 28, borderColor: INK, borderWidth: 0.7 });
     const t = "THANK YOU FOR YOUR BUSINESS!"; this.put(t, M + (CW - this.width(t, this.fb, 12)) / 2, this.y - 19, 12, true); this.y -= 28; }
+  // Two-column terms page; picks the largest font size that fits under the header.
   terms() {
-    this.newPage(); this.header(); this.put("Terms And Conditions", M, this.y - 13, 13, true); this.y -= 26;
-    TERMS.forEach((t, i) => { const ls = this.wrap(t, this.f, 8.8, CW - 18); if (this.y - ls.length * 12.3 < M) this.newPage();
-      this.put(`${i + 1}.`, M, this.y - 8.8, 8.8); ls.forEach((l, k) => this.put(l, M + 18, this.y - 8.8 - k * 12.3, 8.8)); this.y -= ls.length * 12.3 + 4; });
+    this.newPage(); this.header(); this.put("Terms & Conditions", M, this.y - 13, 13, true); this.y -= 24;
+    const avail = this.y - M, gap = 16, colW = (CW - gap) / 2;
+    type L = { t: string; b?: boolean; x: number; gap?: number };
+    const build = (sz: number) => {
+      const lh = sz * 1.3, blocks: { lines: L[]; h: number }[] = [], mk = (lines: L[]) => ({ lines, h: lines.length * lh + lines.reduce((s, l) => s + (l.gap ?? 0), 0) });
+      termsFor().forEach(sec => sec.items.forEach((it, k) => {
+        const ls: L[] = k === 0 ? [{ t: sec.title.toUpperCase(), b: true, x: 0, gap: 1 }] : [];
+        this.wrap(it, this.f, sz, colW - 9).forEach((t, i) => ls.push({ t: i === 0 ? "\u2022 " + t : t, x: i === 0 ? 0 : 9, gap: 0 }));
+        ls[ls.length - 1].gap = 2.5; blocks.push(mk(ls));
+      }));
+      blocks.push(mk(this.wrap(TERMS_CLOSING, this.fb, sz, colW).map(t => ({ t, b: true, x: 0 }))));
+      return { blocks, lh };
+    };
+    const place = (blocks: { h: number }[]) => { const cols: number[] = []; let c = 0, used = 0; blocks.forEach(b => { if (used + b.h > avail && c === 0) { c = 1; used = 0; } used += b.h; cols.push(c); }); return { cols, used }; };
+    let sz = 9; for (; sz > 5.5; sz -= 0.1) { const { blocks } = build(sz), { cols } = place(blocks); const h1 = blocks.filter((_, i) => cols[i] === 1).reduce((s, b) => s + b.h, 0), h0 = blocks.filter((_, i) => cols[i] === 0).reduce((s, b) => s + b.h, 0);
+      if (h0 <= avail && h1 <= avail) break; }
+    const { blocks, lh } = build(sz), { cols } = place(blocks), ys = [this.y, this.y];
+    blocks.forEach((b, i) => { const c = cols[i]; for (const l of b.lines) { this.put(l.t, M + c * (colW + gap) + l.x, ys[c] - sz, sz, l.b); ys[c] -= lh + (l.gap ?? 0); } });
+    this.fitSize = sz;
   }
+  fitSize = 0;
 }
 const col = (r: number[]) => r.map(x => x * CW);
 function packageTable(p: P, items: Quote["items"], q: Quote | undefined, dates: string[] | null, first: number, compact = false) {
@@ -93,8 +112,8 @@ function packageTable(p: P, items: Quote["items"], q: Quote | undefined, dates: 
 }
 async function done(p: P) { p.terms(); return p.doc.save(); }
 
-export async function quotePdf(q: Quote, logo: ArrayBuffer | null) {
-  const p = await P.create(logo), total = quoteTotal(q), pl = plan(total);
+export async function quotePdf(q: Quote, logo: ArrayBuffer | null, brand: Brand = BRAND) {
+  const p = await P.create(logo, brand), total = quoteTotal(q), pl = plan(total);
   p.header("Quotation", [["DATE", longDate(q.date)], ["Quotation #", String(q.no)], ["Customer ID", "NA"], ...(q.revision && q.revision > 1 ? [["Revision", `R${q.revision}`] as [string, string]] : [])]);
   p.billTo(q.customer, q.phone, q.comments);
   const c = packageTable(p, q.items, q, null, 1);
@@ -104,8 +123,8 @@ export async function quotePdf(q: Quote, logo: ArrayBuffer | null) {
   p.banner();
   return done(p);
 }
-export async function invoicePdf(b: Booking, n: number, logo: ArrayBuffer | null) {
-  const p = await P.create(logo), i = buildInvoice(b, n), dates = b.events.map(e => e.date).filter(Boolean).sort(), first = dates[0], last = dates[dates.length - 1];
+export async function invoicePdf(b: Booking, n: number, logo: ArrayBuffer | null, brand: Brand = BRAND) {
+  const p = await P.create(logo, brand), i = buildInvoice(b, n), dates = b.events.map(e => e.date).filter(Boolean).sort(), first = dates[0], last = dates[dates.length - 1];
   p.header("Invoice", [["DATE", longDate(i.pay.date)], ["Invoice #", invoiceNo(+i.pay.date.slice(0, 4), i.pay.seq)], ["Quotation #", b.ref]]);
   p.billTo(b.couple, b.phone, "None");
   if (b.quote?.items[0]) packageTable(p, [b.quote.items[0], ...b.addons.map(a => ({ title: a.description, sub: "Added after acceptance", amount: a.amount, discount: 0 }))], b.quote, dates, 1, true);
