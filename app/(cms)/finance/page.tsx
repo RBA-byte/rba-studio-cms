@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { getBookings, getExpenses } from "@/lib/db";
 import { paidOf } from "@/lib/data";
-import { CATEGORIES, Range, inRange, keyFor, monthLabel, monthOf, shiftMonth } from "@/lib/finance";
+import { CATEGORIES, Range, crewExpenses, inRange, keyFor, monthLabel, monthOf, shiftMonth } from "@/lib/finance";
 import { todayPK } from "@/lib/brand";
 import { pkr } from "@/lib/calc";
 import { addExpense, deleteExpense } from "@/app/actions";
 const R = (i: number) => ({ "--i": i } as React.CSSProperties);
 export default async function Finance({ searchParams }: { searchParams: Promise<{ r?: string }> }) {
   const { r } = await searchParams, range: Range = r === "last" || r === "all" ? r : "month", today = todayPK(), key = keyFor(range, today);
-  const [bookings, expenses] = await Promise.all([getBookings(), getExpenses()]);
+  const [bookings, manual] = await Promise.all([getBookings(), getExpenses()]);
+  const expenses = [...manual, ...crewExpenses(bookings, today)].sort((a, b) => b.date.localeCompare(a.date));
   // Income = payments received, minus refunds (dated when the booking was cancelled)
   const flows = bookings.flatMap(b => [...b.payments.map(p => ({ date: p.date, amt: p.amount })), ...(b.refund ? [{ date: b.cancelledAt || today, amt: -b.refund }] : [])]);
   const income = flows.filter(f => inRange(f.date, key)).reduce((s, f) => s + f.amt, 0);
@@ -17,7 +18,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const months = Array.from({ length: 6 }, (_, i) => shiftMonth(monthOf(today), i - 5)).map(m => ({ m,
     inc: flows.filter(f => monthOf(f.date) === m).reduce((s, f) => s + f.amt, 0), exp: expenses.filter(e => monthOf(e.date) === m).reduce((s, e) => s + e.amount, 0) }));
   const top = Math.max(1, ...months.flatMap(x => [x.inc, x.exp]));
-  const cats = CATEGORIES.map(c => ({ c, v: spendList.filter(e => e.category === c).reduce((s, e) => s + e.amount, 0) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+  const cats = [...CATEGORIES, "Crew (from bookings)"].map(c => ({ c, v: spendList.filter(e => e.category === c).reduce((s, e) => s + e.amount, 0) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
   const perBooking = bookings.filter(b => b.payments.length).map(b => { const net = paidOf(b) - b.refund, ex = expenses.filter(e => e.bookingId === b.id).reduce((s, e) => s + e.amount, 0); return { b, net, ex, profit: net - ex }; });
   const tab = (v: string, l: string) => <Link className={`btn ghost${(r ?? "month") === v ? " sel" : ""}`} href={`/finance?r=${v}`}>{l}</Link>;
   return <><h1 className="reveal">Finance</h1>
@@ -46,5 +47,5 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
       {spendList.length === 0 && <p className="mute">Nothing recorded for this period.</p>}
       {spendList.map(e => <form action={deleteExpense} className="row" key={e.id}><input type="hidden" name="id" value={e.id} />
         <div><b>{e.category}</b><div className="mute">{e.date}{e.note && ` · ${e.note}`}{e.bookingId && ` · ${bookings.find(b => b.id === e.bookingId)?.couple ?? ""}`}</div></div>
-        <span style={{ display: "flex", gap: 12, alignItems: "center" }}>{pkr(e.amount)}<button className="btn ghost" aria-label="Delete expense">Delete</button></span></form>)}</div></>;
+        <span style={{ display: "flex", gap: 12, alignItems: "center" }}>{pkr(e.amount)}{"crew" in e && e.crew ? <small className="mute">edit in booking</small> : <button className="btn ghost" aria-label="Delete expense">Delete</button>}</span></form>)}</div></>;
 }

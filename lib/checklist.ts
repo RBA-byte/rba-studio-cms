@@ -16,3 +16,13 @@ export function stageOf(tasks: T[]) {
 }
 export const progressOf = (tasks: T[]) => { const done = tasks.filter(t => t.done).length;
   return { done, total: tasks.length, pending: tasks.length - done, pct: tasks.length ? Math.round(done / tasks.length * 100) : 0 }; };
+// Steps unlock in order: 1 on/after the last event date, 2 after 1, 3 after 2, everything else after 3.
+export function unlocked(tasks: T[], lastDate: string | undefined, today: string) {
+  const done = (o: number) => !!tasks.find(t => t.ord === o)?.done, ok = new Set<number>();
+  for (const t of tasks) {
+    const open = t.ord === 1 ? !lastDate || today >= lastDate : t.ord === 2 ? done(1) : t.ord === 3 ? done(2) : done(3);
+    if (open || t.done) ok.add(t.ord);
+  }
+  return ok;
+}
+export const lastEventDate = (events: { date: string }[]) => events.map(e => e.date).filter(Boolean).sort().pop();

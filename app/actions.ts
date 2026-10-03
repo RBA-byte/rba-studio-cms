@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase";
 import { Quote, quoteTotal } from "@/lib/doc";
-import { taskRows } from "@/lib/checklist";
+import { lastEventDate, taskRows, unlocked } from "@/lib/checklist";
+import { todayPK } from "@/lib/brand";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fail = (e: { message: string } | null) => { if (e) throw new Error(e.message); };
 const refresh = () => revalidatePath("/", "layout");
@@ -57,9 +58,18 @@ export async function acceptQuotation(fd: FormData) {
   fail((await sb.from("quotations").update({ status: "Accepted" }).eq("id", q!.id)).error);
   refresh(); redirect(`/bookings/${b.data!.id}`);
 }
-export async function updateSlot(fd: FormData) {
-  const sb = await createClient(), status = String(fd.get("status"));
-  fail((await sb.from("booking_slots").update({ status, person: String(fd.get("person") ?? "") || null, agency: String(fd.get("agency") ?? "") || null }).eq("id", String(fd.get("id")))).error);
+// One Save for the whole booking: event dates/venues plus crew status, name and expense.
+export async function saveBooking(fd: FormData) {
+  const sb = await createClient(), keys = [...fd.keys()];
+  const ids = (p: string) => [...new Set(keys.filter(k => k.startsWith(p)).map(k => k.split("_")[1]))];
+  const jobs: PromiseLike<{ error: { message: string } | null }>[] = [];
+  for (const id of ids("event_")) jobs.push(sb.from("booking_events").update({ event_date: String(fd.get(`event_${id}_date`)) || null, venue: String(fd.get(`event_${id}_venue`) ?? "").trim() || null }).eq("id", id));
+  for (const id of ids("slot_")) {
+    const person = String(fd.get(`slot_${id}_person`) ?? "").trim(), self = /^self$/i.test(person);
+    const status = person || fd.get(`slot_${id}_status`) === "assigned" ? "assigned" : "pending";
+    jobs.push(sb.from("booking_slots").update({ status, person: person || null, agency: null, cost: self ? 0 : Math.max(0, Number(fd.get(`slot_${id}_cost`)) || 0) }).eq("id", id));
+  }
+  (await Promise.all(jobs)).forEach(r => fail(r.error));
   refresh();
 }
 export async function recordPayment(fd: FormData) {
@@ -71,11 +81,6 @@ export async function recordPayment(fd: FormData) {
   if (amount > Number(bk!.total) - paid) throw new Error("Amount is more than the remaining balance.");
   fail((await sb.from("payments").insert({ booking_id: id, amount, paid_on: String(fd.get("date")) || undefined })).error);
   refresh(); redirect(`/invoices/${id}/${(bk!.payments as any[]).length + 1}`);
-}
-export async function updateEvent(fd: FormData) {
-  const sb = await createClient();
-  fail((await sb.from("booking_events").update({ event_date: String(fd.get("date")) || null, venue: String(fd.get("venue") ?? "") || null }).eq("id", String(fd.get("id")))).error);
-  refresh();
 }
 export async function cancelBooking(fd: FormData) {
   const sb = await createClient(), id = String(fd.get("booking")), mode = String(fd.get("refund"));
@@ -93,7 +98,11 @@ export async function restoreBooking(fd: FormData) {
 }
 export async function toggleTask(fd: FormData) {
   const sb = await createClient(), done = String(fd.get("done")) !== "true";
-  fail((await sb.from("production_tasks").update({ done, done_on: done ? new Date().toISOString().slice(0, 10) : null }).eq("id", String(fd.get("id")))).error);
+  const { data: t, error } = await sb.from("production_tasks").select("ord,booking_id").eq("id", String(fd.get("id"))).single(); fail(error);
+  const { data: bk, error: e2 } = await sb.from("bookings").select("booking_events(event_date),production_tasks(ord,done)").eq("id", t!.booking_id).single(); fail(e2);
+  const last = lastEventDate((bk!.booking_events as any[]).map(e => ({ date: e.event_date ?? "" })));
+  if (!unlocked(bk!.production_tasks as any[], last, todayPK()).has(t!.ord)) throw new Error("This step is not unlocked yet.");
+  fail((await sb.from("production_tasks").update({ done, done_on: done ? todayPK() : null }).eq("id", String(fd.get("id")))).error);
   refresh();
 }
 export async function createTasks(fd: FormData) {

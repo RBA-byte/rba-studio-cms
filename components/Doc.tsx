@@ -1,4 +1,4 @@
-import { BRAND, longDate } from "@/lib/brand";
+import { BRAND, longDate, shortDate } from "@/lib/brand";
 import { TERMS } from "@/lib/terms";
 import { pkr } from "@/lib/calc";
 import { buildInvoice, invoiceNo, plan } from "@/lib/invoice";
@@ -42,18 +42,27 @@ export function QuoteDoc({ q }: { q: Quote }) {
     <TermsSheet /></div>;
 }
 export function InvoiceDoc({ b, n }: { b: Booking; n: number }) {
-  const i = buildInvoice(b, n);
+  const i = buildInvoice(b, n), dates = b.events.map(e => e.date).filter(Boolean).sort(), first = dates[0], last = dates[dates.length - 1];
+  const q = b.quote, it = q?.items[0];
+  const status = (k: number) => k < i.mi ? `Paid on ${shortDate(b.payments[k].date)}` : k === i.mi ? `Paid now · ${shortDate(i.pay.date)}` : `Due ${shortDate(k === 1 ? first : last)}`;
   return <div className="sheets">
     <Sheet><Letterhead title="Invoice" meta={[["DATE", longDate(i.pay.date)], ["Invoice #", invoiceNo(+i.pay.date.slice(0, 4), i.pay.seq)], ["Quotation #", b.ref]]} />
       <BillTo name={b.couple} phone={b.phone} note="None" />
-      <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Payment Details</th><th className="r">Amount (PKR)</th><th className="r">Status</th></tr></thead>
+      {q && it && <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Package Details</th><th className="r">Amount (PKR)</th><th className="r">Discount</th><th className="r">Total (PKR)</th></tr></thead>
+        <tbody><tr><td>1</td><td><b>{it.title}</b><div>{dates.length ? `Event dates: ${dates.map(shortDate).join(", ")}` : it.sub}</div></td>
+          <td className="r">{it.amount.toLocaleString("en-PK")}</td><td className="r">{it.discount.toLocaleString("en-PK")}</td><td className="r">{(it.amount - it.discount).toLocaleString("en-PK")}</td></tr>
+          <tr><td colSpan={5}><b>SERVICES INCLUDED</b>
+            {q.services.map(s => <div key={s.event} style={{ marginTop: 6 }}><b>({s.event}):</b> {s.crew.join(" · ")}</div>)}
+            <div style={{ marginTop: 8 }}><b>DELIVERABLES:</b> {q.deliverables.join(" · ")}</div></td></tr></tbody></table>}
+      <div className="doc-sub">Payment details</div>
+      <table className="xl"><thead><tr><th style={{ width: "7%" }}>Sr</th><th>Payment Details</th><th className="r">Amount (PKR)</th><th className="r" style={{ width: "27%" }}>Status</th></tr></thead>
         <tbody>{i.rows.map((m, k) => <tr key={m.name}><td>{k + 1}</td><td><b>{m.name}</b><div>{m.note}</div></td>
-          <td className="r">{m.amount.toLocaleString("en-PK")}</td><td className="r">{k < i.mi ? "Paid" : k === i.mi ? "Paid now" : "Due"}</td></tr>)}
+          <td className="r">{m.amount.toLocaleString("en-PK")}</td><td className="r">{status(k)}</td></tr>)}
           <tr><td colSpan={3} className="r">Total agreed</td><td className="r">{b.total.toLocaleString("en-PK")}</td></tr>
           <tr><td colSpan={3} className="r">Previously paid</td><td className="r">{i.before.toLocaleString("en-PK")}</td></tr>
           <tr><td colSpan={3} className="r"><b>Payment received ({i.phase})</b></td><td className="r"><b>{i.pay.amount.toLocaleString("en-PK")}</b></td></tr>
           <tr><td colSpan={3} className="r"><b>Remaining balance</b></td><td className="r"><b>{i.remaining.toLocaleString("en-PK")}</b></td></tr></tbody></table>
-      {i.next && <p>Next payment: {i.next.name}, {pkr(i.next.amount)} ({i.next.note.toLowerCase()}).</p>}
+      {i.next && <p style={{ margin: "8px 0" }}>Next payment: {i.next.name}, {pkr(i.next.amount)} ({i.next.note.toLowerCase()}).</p>}
       <div className="thanks">THANK YOU FOR YOUR BUSINESS!</div></Sheet>
     <TermsSheet /></div>;
 }

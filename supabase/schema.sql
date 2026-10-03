@@ -19,7 +19,7 @@ create table bookings (
 create table booking_events (id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade, name text not null, event_date date, venue text, outdoor boolean not null default false);
 create table booking_slots (
   id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade, ord int not null default 0,
-  event_name text not null, role text not null, status text not null default 'pending' check (status in ('assigned','pending','agency')), person text, agency text);
+  event_name text not null, role text not null, status text not null default 'pending' check (status in ('assigned','pending','agency')), person text, agency text, cost numeric not null default 0);
 create table production_tasks (id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings on delete cascade, ord int not null, label text not null, done boolean not null default false, done_on date, unique (booking_id, ord));
 create table expenses (id uuid primary key default gen_random_uuid(), booking_id uuid references bookings on delete set null, spent_on date not null default current_date, amount numeric not null check (amount > 0), category text not null, note text, created_at timestamptz default now());
 create table payments (

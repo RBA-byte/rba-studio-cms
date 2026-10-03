@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-const items = [["/", "Home"], ["/bookings", "Bookings"], ["/quotations", "Quotes"], ["/invoices", "Invoices"]];
-const extra = [["/finance", "Finance"], ["/clients", "Clients"]]; // desktop sidebar only; the phone tab bar is unchanged
+const items = [["/", "Home"], ["/bookings", "Bookings"], ["/quotations", "Quotes"], ["/invoices", "Invoices"], ["/finance", "Finance"], ["/reports", "Reports"], ["/crew", "Crew"]];
+const extra = [["/clients", "Clients"]]; // sidebar only (phone: button on the dashboard)
 export default function Nav() {
   const p = usePathname();
   const on = (h: string) => (h === "/" ? p === "/" : p.startsWith(h));

@@ -7,5 +7,4 @@ export const crewProgress = (b: Booking) => ({ done: b.slots.filter(s => s.statu
 // Dates that another booking has also reserved.
 export const conflicts = (b: Booking, bookings: Booking[]) => b.events.flatMap(e =>
   bookings.filter(o => o.id !== b.id && e.date && o.events.some(x => x.date === e.date)).map(o => ({ date: e.date, other: o.couple })));
-export const slotLabel = (s: Booking["slots"][number]) =>
-  s.status === "assigned" ? (s.person ?? "Assigned") : s.status === "agency" ? `Agency${s.agency ? " · " + s.agency : ""} (awaiting crew)` : "Not assigned";
+export const slotLabel = (s: Booking["slots"][number]) => (s.status === "assigned" ? (s.person ?? "Assigned") : "Not assigned");

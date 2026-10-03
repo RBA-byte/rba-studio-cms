@@ -4,16 +4,17 @@ import { stageOf } from "./checklist";
 import { Quote, quoteTotal } from "./doc";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const toBooking = (r: any): Booking => { const tasks = [...(r.production_tasks ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((t: any) => ({ id: t.id, ord: t.ord, label: t.label, done: t.done, doneOn: t.done_on ?? undefined }));
+  const qr: any = Array.isArray(r.quotations) ? r.quotations[0] : r.quotations, rev = qr?.quotation_revisions?.find((x: any) => x.revision === qr.current_revision);
   return {
   id: r.id, ref: String(r.ref), couple: r.couple, phone: r.phone ?? "", status: r.status, total: Number(r.total), cancelled: r.status === "Cancelled", cancelledAt: String(r.cancelled_at ?? "").slice(0, 10), refund: Number(r.refund_amount ?? 0), cancelReason: r.cancel_reason ?? "",
   tasks, phase: tasks.length ? stageOf(tasks) : r.phase,
-  events: (r.booking_events ?? []).map((e: any) => ({ id: e.id, name: e.name, date: e.event_date ?? "", venue: e.venue ?? "", outdoor: !!e.outdoor })).sort((a: any, b: any) => a.date.localeCompare(b.date)),
-  slots: [...(r.booking_slots ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((s: any) => ({ id: s.id, event: s.event_name, role: s.role, status: s.status, person: s.person ?? undefined, agency: s.agency ?? undefined })),
+  quote: rev?.data?.quote, events: (r.booking_events ?? []).map((e: any) => ({ id: e.id, name: e.name, date: e.event_date ?? "", venue: e.venue ?? "", outdoor: !!e.outdoor })).sort((a: any, b: any) => a.date.localeCompare(b.date)),
+  slots: [...(r.booking_slots ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((s: any) => ({ id: s.id, event: s.event_name, role: s.role, status: s.status === "assigned" ? "assigned" : "pending", person: s.person ?? undefined, cost: Number(s.cost ?? 0) })),
   payments: [...(r.payments ?? [])].sort((a: any, b: any) => a.seq - b.seq).map((p: any) => ({ date: p.paid_on, amount: Number(p.amount), seq: Number(p.seq) })),
 }; };
 export async function getBookings(): Promise<Booking[]> {
   const sb = await createClient();
-  const { data, error } = await sb.from("bookings").select("*, booking_events(*), booking_slots(*), payments(*), production_tasks(*)").order("created_at", { ascending: false });
+  const { data, error } = await sb.from("bookings").select("*, booking_events(*), booking_slots(*), payments(*), production_tasks(*), quotations(current_revision, quotation_revisions(revision, data))").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(toBooking);
 }
