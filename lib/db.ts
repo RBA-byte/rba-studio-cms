@@ -1,4 +1,5 @@
 import { createClient } from "./supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Booking } from "./data";
 import { stageOf } from "./checklist";
 import { Quote, quoteTotal } from "./doc";
@@ -12,8 +13,8 @@ const toBooking = (r: any): Booking => { const tasks = [...(r.production_tasks ?
   slots: [...(r.booking_slots ?? [])].sort((a: any, b: any) => a.ord - b.ord).map((s: any) => ({ id: s.id, event: s.event_name, role: s.role, status: s.status === "assigned" ? "assigned" : "pending", person: s.person ?? undefined, cost: Number(s.cost ?? 0) })),
   payments: [...(r.payments ?? [])].sort((a: any, b: any) => a.seq - b.seq).map((p: any) => ({ date: p.paid_on, amount: Number(p.amount), seq: Number(p.seq) })),
 }; };
-export async function getBookings(): Promise<Booking[]> {
-  const sb = await createClient();
+export async function getBookings(client?: SupabaseClient): Promise<Booking[]> {
+  const sb = client ?? await createClient();
   const { data, error } = await sb.from("bookings").select("*, booking_events(*), booking_slots(*), payments(*), production_tasks(*), quotations(current_revision, quotation_revisions(revision, data))").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(toBooking);
@@ -25,8 +26,8 @@ export async function getQuotes() {
   return (data ?? []).map((q: any) => { const r = q.quotation_revisions.find((x: any) => x.revision === q.current_revision);
     return { no: Number(q.number), status: q.status as string, customer: (r?.data?.quote?.customer ?? "") as string, total: Number(r?.total ?? 0) }; });
 }
-export async function getQuote(no: number) {
-  const sb = await createClient();
+export async function getQuote(no: number, client?: SupabaseClient) {
+  const sb = client ?? await createClient();
   const { data, error } = await sb.from("quotations").select("id,number,status,current_revision,quotation_revisions(revision,total,data,created_at),bookings(id)").eq("number", no).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;

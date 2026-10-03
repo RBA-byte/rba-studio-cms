@@ -4,6 +4,8 @@ import { getBookings } from "@/lib/db";
 import { netOf } from "@/lib/data";
 import { lastEventDate, progressOf } from "@/lib/checklist";
 import { shortDate } from "@/lib/brand";
+import { dueLabel, dueSoon, reminderText } from "@/lib/reminders";
+import MsgButtons from "@/components/MsgButtons";
 import { logout } from "@/app/actions";
 import { pkr } from "@/lib/calc";
 import { todayPK } from "@/lib/brand";
@@ -15,6 +17,7 @@ export default async function Dashboard() {
   const n = next ? Math.round((Date.parse(next.e.date) - Date.parse(today)) / 864e5) : null;
   const when = n === 0 ? "today" : n === 1 ? "tomorrow" : `in ${n} days`;
   const overdue = bookings.map(b => ({ b, last: lastEventDate(b.events), pr: progressOf(b.tasks) })).filter(x => x.last && x.last < today && !(x.pr.total > 0 && x.pr.pending === 0)) as { b: typeof bookings[number]; last: string; pr: ReturnType<typeof progressOf> }[];
+  const dues = dueSoon(bookings, today);
   const upcoming = bookings.filter(b => b.events.some(e => e.date && e.date >= today)).length;
   const revenue = all.reduce((s, b) => s + netOf(b), 0), due = bookings.reduce((s, b) => s + b.total - b.payments.reduce((x, p) => x + p.amount, 0), 0);
   const stats: [string, string | number][] = [["Outstanding", pkr(due)], ["Revenue", pkr(revenue)], ["Total bookings", bookings.length], ["Upcoming", upcoming]];
@@ -23,6 +26,8 @@ export default async function Dashboard() {
     <p className="lede reveal" style={R(1)}>{next ? <>Your next event is {when} — <em>{next.b.couple}&apos;s Wedding</em>.</> : "No upcoming events."}</p>
     {overdue.length > 0 && <div className="card notice reveal" style={R(1)}><b>Update project timeline</b>
       {overdue.map(({ b, last, pr }) => <Link className="row" key={b.id} href={`/bookings/${b.id}#timeline`}><div>{b.couple}<div className="mute">Wedding was on {shortDate(last)} · {pr.done}/{pr.total || "–"} steps done</div></div><span className="pill">Open timeline →</span></Link>)}</div>}
+    {dues.length > 0 && <div className="card notice reveal" style={R(1)}><b>Payment reminders</b>
+      {dues.map(({ b, d }) => <div className="row" key={b.id}><Link href={`/bookings/${b.id}`}>{b.couple}<div className="mute">{d.name} · PKR {d.amount.toLocaleString("en-PK")} · {dueLabel(d.days)}</div></Link><MsgButtons phone={b.phone} text={reminderText(b, d)} /></div>)}</div>}
     <div className="grid4">{stats.map(([l, v], i) => <div className={`card stat reveal${i === 0 ? " hero" : ""}`} style={R(i + 2)} key={l}><small>{l}</small><div className="num">{v}</div></div>)}</div>
     <div className="reveal" style={R(6)}><Calendar bookings={bookings} /></div>
     <div className="card reveal" style={{ ...R(7), marginTop: 16 }}>

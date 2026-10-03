@@ -6,6 +6,7 @@ import { BRAND } from "@/lib/brand";
 import { pkr } from "@/lib/calc";
 import { QuoteDoc } from "@/components/Doc";
 import PrintBar from "@/components/PrintBar";
+import { shareLink } from "@/lib/share";
 import { acceptQuotation, setQuotationStatus } from "@/app/actions";
 const STATUSES = ["Draft", "Sent", "Revision requested", "Accepted", "Rejected", "Expired"];
 export default async function Quote({ params }: { params: Promise<{ no: string }> }) {
@@ -13,7 +14,7 @@ export default async function Quote({ params }: { params: Promise<{ no: string }
   const d = await getQuote(+no); if (!d) notFound();
   const q = d.quote, msg = `Assalam o Alaikum ${q.customer}, please find your quotation #${q.no} from ${BRAND.name}. Total: ${pkr(d.total)}.`;
   const wa = q.phone.replace(/\D/g, "").replace(/^0/, "92");
-  return <><PrintBar phone={wa} text={msg} subject={`Quotation #${q.no} — ${BRAND.name}`} />
+  return <><PrintBar link={shareLink(`q:${d.no}`)} phone={wa} text={msg} subject={`Quotation #${q.no} — ${BRAND.name}`} />
     <div className="card noprint" style={{ marginBottom: 16, display: "grid", gap: 12 }}>
       <div className="row" style={{ border: 0, padding: 0, flexWrap: "wrap", gap: 10 }}>
         <span>Status <span className="pill">{d.status}</span> · Revision {d.revision}</span>

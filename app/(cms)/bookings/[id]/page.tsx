@@ -7,6 +7,8 @@ import { lastEventDate, progressOf, unlocked } from "@/lib/checklist";
 import { invoiceNo, schedule } from "@/lib/invoice";
 import { pkr } from "@/lib/calc";
 import { shortDate, todayPK } from "@/lib/brand";
+import { confirmationText, dueLabel, nextDue, reminderText } from "@/lib/reminders";
+import MsgButtons from "@/components/MsgButtons";
 import { cancelBooking, createTasks, recordPayment, restoreBooking, saveBooking, toggleTask } from "@/app/actions";
 const R = (i: number) => ({ "--i": i } as React.CSSProperties);
 export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,6 +18,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const adv = b.payments[0]?.amount ?? 0, rows = schedule(b), next = rows.find(r => r.state !== "paid"), pr = progressOf(b.tasks);
   const suggest = next ? Math.min(left, next.state === "part" ? left : next.amount) : "";
   const last = lastEventDate(b.events), open = unlocked(b.tasks, last, today), crewCost = b.slots.reduce((s, x) => s + x.cost, 0);
+  const dueNow = nextDue(b, today);
   const sig = b.events.map(e => e.date + e.venue).join() + b.slots.map(s => s.status + s.person + s.cost).join();
   return <>
     <Link href="/bookings" className="mute">← All bookings</Link>
@@ -47,6 +50,9 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         {!b.cancelled && left > 0 && <form action={recordPayment} style={{display:"grid",gap:8,margin:"14px 0"}}><input type="hidden" name="booking" value={b.id} />
           <label>Record payment (PKR)</label><input name="amount" type="number" min={1} max={left} required defaultValue={suggest} />
           <input name="date" type="date" defaultValue={today} aria-label="Payment date" /><button className="btn">Save &amp; create invoice</button></form>}
+        {!b.cancelled && (ok || dueNow) && <div style={{display:"grid",gap:12,margin:"6px 0 14px"}}>
+          {ok && <div><small className="mute">Booking confirmation message</small><div style={{marginTop:6}}><MsgButtons phone={b.phone} text={confirmationText(b)} /></div></div>}
+          {dueNow && <div><small className="mute">Payment reminder · {dueNow.name} {dueLabel(dueNow.days)}</small><div style={{marginTop:6}}><MsgButtons phone={b.phone} text={reminderText(b, dueNow)} /></div></div>}</div>}
         <p className="mute" style={{marginBottom:6}}>Invoices</p>
         {b.payments.map((p, i) => <Link key={i} className="row" href={`/invoices/${b.id}/${i + 1}`}><span>{invoiceNo(+p.date.slice(0, 4), p.seq)}</span><span className="mute">{p.date} · {pkr(p.amount)}</span></Link>)}</div>
     </div>

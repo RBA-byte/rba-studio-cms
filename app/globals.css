@@ -109,3 +109,13 @@ details.dropd[open]>.dd{animation:reveal .6s cubic-bezier(.2,.7,.2,1) both;margi
 @media(max-width:900px){.slot{grid-template-columns:1fr 1fr}.evform{grid-template-columns:1fr 1fr}
  .tabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x}.tabs::-webkit-scrollbar{display:none}
  .tabs a{flex:0 0 auto;min-width:76px;padding:11px 14px}}
+/* round 4 */
+.mini2{width:140px;height:4px;margin:7px 0 5px;background:var(--line);border-radius:99px!important;overflow:hidden}
+.mini2 i{display:block;height:100%;background:var(--gold);border-radius:99px!important;transition:width .6s}
+.bkrow{align-items:flex-start}.bkright{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:10px}.bkright .pill{margin-top:2px}
+.xlscroll{overflow-x:auto}.xlr{border-collapse:collapse;min-width:1120px;font-size:13px;margin:0}
+.xlr th,.xlr td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}.xlr td.n{text-align:right;white-space:nowrap}
+.xlr th{background:rgba(255,255,255,.04);font-weight:600;white-space:nowrap}.xlr .wed td{background:rgba(201,169,106,.09);color:var(--gold);font-weight:600}
+.xlr tfoot td{font-weight:700;border-top:2px solid var(--gold)}
+@media print{.rep .xlr th,.rep .xlr td{border-color:#999;color:#000;background:#fff!important}.xlscroll{overflow:visible}}
+@media(max-width:900px){.tabs{bottom:28px}.main{padding-bottom:130px}}

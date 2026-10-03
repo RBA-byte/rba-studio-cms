@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(req: NextRequest) {
+  if (req.nextUrl.pathname.startsWith("/d/")) return NextResponse.next(); // signed public share links
   let res = NextResponse.next({ request: req });
   const sb = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, { cookies: {
     getAll: () => req.cookies.getAll(),
